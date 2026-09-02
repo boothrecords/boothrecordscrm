@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   LogOut,
   X,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import type { Profile } from '@/types/database';
@@ -43,12 +44,15 @@ const MODULE_GROUPS: {
     items: [
       { href: '/campanas', label: 'Campañas', icon: Send },
       { href: '/plantillas/email', label: 'Plantillas de email', icon: Mail },
-      { href: '/plantillas/whatsapp', label: 'Plantillas de Meta', icon: MessageCircle },
+      { href: '/plantillas/whatsapp', label: 'Plantillas de WhatsApp', icon: MessageCircle },
     ],
   },
   {
     title: 'Configuración',
-    items: [{ href: '/usuarios', label: 'Usuarios', icon: ShieldCheck }],
+    items: [
+      { href: '/usuarios', label: 'Usuarios', icon: ShieldCheck },
+      { href: '/contactos/campos-personalizados', label: 'Campos personalizados', icon: SlidersHorizontal },
+    ],
   },
 ];
 
@@ -75,9 +79,10 @@ export function Sidebar({ profile }: { profile: Profile | null }) {
           <Image
             src="/logo-booth-white.png"
             alt="Booth"
-            width={40}
-            height={40}
-            className="h-10 w-10 object-contain"
+            width={64}
+            height={64}
+            className="h-16 w-16 object-contain"
+            priority
           />
         </Link>
 

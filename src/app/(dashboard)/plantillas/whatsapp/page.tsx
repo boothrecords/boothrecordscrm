@@ -19,7 +19,7 @@ export default async function WhatsappTemplatesPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Plantillas de Meta</h1>
+          <h1 className="text-2xl font-semibold">Plantillas de WhatsApp</h1>
           <p className="mt-1 text-sm text-booth-textMuted">
             Las plantillas se crean y aprueban en Meta Business Manager. Aquí solo se sincronizan.
           </p>

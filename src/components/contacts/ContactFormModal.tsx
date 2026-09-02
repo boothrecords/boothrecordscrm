@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
-import type { ContactStatus, ListRecord } from '@/types/database';
+import type { ContactStatus, CustomFieldDefinition, ListRecord, Tag } from '@/types/database';
 
 const inputClass =
   'w-full rounded-lg border border-booth-border bg-booth-bg px-3 py-2 text-sm outline-none focus:border-booth-accent';
@@ -15,16 +15,26 @@ export function ContactFormModal({
   onClose,
   onCreated,
   lists,
+  tags,
+  onTagCreated,
+  customFieldDefs,
 }: {
   open: boolean;
   onClose: () => void;
   onCreated: () => void;
   lists: Pick<ListRecord, 'id' | 'name'>[];
+  tags: Tag[];
+  onTagCreated: (tag: Tag) => void;
+  customFieldDefs: CustomFieldDefinition[];
 }) {
   const supabase = createClient();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedLists, setSelectedLists] = useState<string[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [newTagName, setNewTagName] = useState('');
+  const [creatingTag, setCreatingTag] = useState(false);
+  const [customValues, setCustomValues] = useState<Record<string, string>>({});
   const [form, setForm] = useState({
     first_name: '',
     last_name: '',
@@ -45,6 +55,22 @@ export function ContactFormModal({
     setSelectedLists((prev) => (prev.includes(id) ? prev.filter((l) => l !== id) : [...prev, id]));
   }
 
+  function toggleTag(id: string) {
+    setSelectedTags((prev) => (prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]));
+  }
+
+  async function handleCreateTag() {
+    const name = newTagName.trim();
+    if (!name) return;
+    setCreatingTag(true);
+    const { data, error: tagError } = await supabase.from('tags').insert({ name }).select().single();
+    setCreatingTag(false);
+    if (tagError || !data) return;
+    onTagCreated(data as Tag);
+    setSelectedTags((prev) => [...prev, data.id]);
+    setNewTagName('');
+  }
+
   function resetAndClose() {
     setForm({
       first_name: '',
@@ -58,6 +84,8 @@ export function ContactFormModal({
       notes: '',
     });
     setSelectedLists([]);
+    setSelectedTags([]);
+    setCustomValues({});
     setError(null);
     onClose();
   }
@@ -85,6 +113,7 @@ export function ContactFormModal({
         source: form.source || 'manual',
         status: form.status,
         notes: form.notes || null,
+        custom_fields: customValues,
       })
       .select()
       .single();
@@ -99,10 +128,17 @@ export function ContactFormModal({
       return;
     }
 
-    if (selectedLists.length > 0 && contact) {
-      await supabase
-        .from('list_contacts')
-        .insert(selectedLists.map((listId) => ({ list_id: listId, contact_id: contact.id })));
+    if (contact) {
+      if (selectedLists.length > 0) {
+        await supabase
+          .from('list_contacts')
+          .insert(selectedLists.map((listId) => ({ list_id: listId, contact_id: contact.id })));
+      }
+      if (selectedTags.length > 0) {
+        await supabase
+          .from('contact_tags')
+          .insert(selectedTags.map((tagId) => ({ tag_id: tagId, contact_id: contact.id })));
+      }
     }
 
     setSaving(false);
@@ -207,6 +243,49 @@ export function ContactFormModal({
           />
         </div>
 
+        <div>
+          <label className={labelClass}>Etiquetas</label>
+          <div className="flex flex-wrap gap-2 rounded-lg border border-booth-border p-2">
+            {tags.map((tag) => {
+              const active = selectedTags.includes(tag.id);
+              return (
+                <button
+                  type="button"
+                  key={tag.id}
+                  onClick={() => toggleTag(tag.id)}
+                  className={`rounded-full border px-3 py-1 text-xs transition ${
+                    active
+                      ? 'border-booth-accent bg-booth-accentMuted text-white'
+                      : 'border-booth-border text-booth-textMuted hover:text-white'
+                  }`}
+                >
+                  {tag.name}
+                </button>
+              );
+            })}
+            {tags.length === 0 && (
+              <span className="text-xs text-booth-textMuted">Todavía no hay etiquetas creadas.</span>
+            )}
+          </div>
+          <div className="mt-2 flex gap-2">
+            <input
+              className={inputClass}
+              placeholder="Crear nueva etiqueta..."
+              value={newTagName}
+              onChange={(e) => setNewTagName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleCreateTag();
+                }
+              }}
+            />
+            <Button type="button" variant="secondary" disabled={creatingTag} onClick={handleCreateTag}>
+              + Agregar
+            </Button>
+          </div>
+        </div>
+
         {lists.length > 0 && (
           <div>
             <label className={labelClass}>Agregar a listas</label>
@@ -222,6 +301,44 @@ export function ContactFormModal({
                 </label>
               ))}
             </div>
+          </div>
+        )}
+
+        {customFieldDefs.length > 0 && (
+          <div className="space-y-3 rounded-lg border border-booth-border p-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-booth-textMuted">
+              Campos personalizados
+            </p>
+            {customFieldDefs.map((field) => (
+              <div key={field.id}>
+                <label className={labelClass}>{field.name}</label>
+                {field.type === 'select' ? (
+                  <select
+                    className={inputClass}
+                    value={customValues[field.field_key] ?? ''}
+                    onChange={(e) =>
+                      setCustomValues((prev) => ({ ...prev, [field.field_key]: e.target.value }))
+                    }
+                  >
+                    <option value="">Selecciona...</option>
+                    {(field.options ?? []).map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}
+                    className={inputClass}
+                    value={customValues[field.field_key] ?? ''}
+                    onChange={(e) =>
+                      setCustomValues((prev) => ({ ...prev, [field.field_key]: e.target.value }))
+                    }
+                  />
+                )}
+              </div>
+            ))}
           </div>
         )}
 

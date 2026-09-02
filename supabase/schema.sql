@@ -15,6 +15,7 @@ create type campaign_channel as enum ('whatsapp', 'email');
 create type campaign_status as enum ('draft', 'scheduled', 'sending', 'sent', 'failed');
 create type recipient_status as enum ('pending', 'sent', 'delivered', 'read', 'replied', 'bounced', 'failed', 'opted_out');
 create type import_status as enum ('processing', 'completed', 'failed');
+create type custom_field_type as enum ('text', 'number', 'date', 'select');
 
 -- =========================================================
 -- Perfiles (1:1 con auth.users)
@@ -60,6 +61,7 @@ create table contacts (
   email_opt_in boolean not null default true,
   owner_id uuid references profiles (id),
   notes text,
+  custom_fields jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint contacts_email_or_phone check (email is not null or phone is not null)
@@ -177,6 +179,19 @@ create index campaign_recipients_campaign_idx on campaign_recipients (campaign_i
 create index campaign_recipients_status_idx on campaign_recipients (status);
 
 -- =========================================================
+-- Campos personalizados de contactos
+-- =========================================================
+create table custom_field_definitions (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  field_key text not null unique,
+  type custom_field_type not null default 'text',
+  options jsonb,
+  created_by uuid references profiles (id),
+  created_at timestamptz not null default now()
+);
+
+-- =========================================================
 -- Importaciones
 -- =========================================================
 create table imports (
@@ -208,6 +223,7 @@ alter table email_templates enable row level security;
 alter table campaigns enable row level security;
 alter table campaign_recipients enable row level security;
 alter table imports enable row level security;
+alter table custom_field_definitions enable row level security;
 
 -- Helper: rol del usuario autenticado
 create or replace function auth_role() returns user_role
@@ -245,6 +261,8 @@ create policy "authenticated read/write: campaigns" on campaigns
 create policy "authenticated read/write: campaign_recipients" on campaign_recipients
   for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 create policy "authenticated read/write: imports" on imports
+  for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+create policy "authenticated read/write: custom_field_definitions" on custom_field_definitions
   for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 
 -- Nota: estas policies dan acceso amplio a cualquier usuario autenticado como

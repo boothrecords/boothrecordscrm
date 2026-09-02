@@ -40,8 +40,26 @@ export interface Contact {
   email_opt_in: boolean;
   owner_id: string | null;
   notes: string | null;
+  custom_fields: Record<string, string | number | null> | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface Tag {
+  id: string;
+  name: string;
+  color: string | null;
+}
+
+export type CustomFieldType = 'text' | 'number' | 'date' | 'select';
+
+export interface CustomFieldDefinition {
+  id: string;
+  name: string;
+  field_key: string;
+  type: CustomFieldType;
+  options: string[] | null;
+  created_at: string;
 }
 
 export interface ListRecord {
@@ -108,9 +126,9 @@ export interface ContactFilters {
   status?: ContactStatus;
   city?: string;
   country?: string;
+  source?: string;
   tagIds?: string[];
   listId?: string;
-  eventId?: string;
   createdFrom?: string;
   createdTo?: string;
 }
