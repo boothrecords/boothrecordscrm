@@ -1,7 +1,8 @@
 import type { Config } from 'tailwindcss';
 
-// Paleta base tomada de la referencia de diseño de Booth (fondo oscuro, acento naranja).
-// Ajustar estos valores cuando se defina la guía de marca final.
+// Paleta base tomada de la referencia de diseño de Booth (fondo oscuro, acento
+// naranja, degradados sutiles estilo "fintech"). Ajustar cuando se defina la
+// guía de marca final.
 const config: Config = {
   content: ['./src/**/*.{ts,tsx}'],
   darkMode: 'class',
@@ -9,8 +10,10 @@ const config: Config = {
     extend: {
       colors: {
         booth: {
-          bg: '#0f0f10',
+          bg: '#0b0b0c',
           surface: '#18181a',
+          rail: '#0d0d0f',
+          panel: '#141416',
           border: '#2a2a2d',
           accent: '#ff6a1a',
           accentMuted: '#7a3a13',
@@ -19,7 +22,8 @@ const config: Config = {
         },
       },
       borderRadius: {
-        xl: '0.875rem',
+        xl: '1.1rem',
+        '2xl': '1.5rem',
       },
     },
   },

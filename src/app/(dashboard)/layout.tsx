@@ -17,7 +17,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div className="flex">
-      <Sidebar />
+      <Sidebar profile={profile} />
       <div className="flex-1">
         <Topbar profile={profile} />
         <main className="p-6">{children}</main>
