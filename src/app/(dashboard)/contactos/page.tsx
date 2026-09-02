@@ -4,13 +4,16 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { ContactFilters } from '@/components/contacts/ContactFilters';
 import { ContactsTable } from '@/components/contacts/ContactsTable';
+import { ContactFormModal } from '@/components/contacts/ContactFormModal';
 import { Button } from '@/components/ui/Button';
-import type { Contact, ContactFilters as ContactFiltersType } from '@/types/database';
+import type { Contact, ContactFilters as ContactFiltersType, ListRecord } from '@/types/database';
 
 export default function ContactsPage() {
   const supabase = createClient();
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [lists, setLists] = useState<Pick<ListRecord, 'id' | 'name'>[]>([]);
   const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
 
   async function loadContacts(filters: ContactFiltersType = {}) {
     setLoading(true);
@@ -30,8 +33,14 @@ export default function ContactsPage() {
     setLoading(false);
   }
 
+  async function loadLists() {
+    const { data } = await supabase.from('lists').select('id, name').order('name');
+    setLists(data ?? []);
+  }
+
   useEffect(() => {
     loadContacts();
+    loadLists();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -41,7 +50,9 @@ export default function ContactsPage() {
         <h1 className="text-2xl font-semibold">Contactos</h1>
         <div className="flex gap-2">
           <Button variant="secondary">Importar CSV / Excel</Button>
-          <Button variant="primary">+ Nuevo contacto</Button>
+          <Button variant="primary" onClick={() => setModalOpen(true)}>
+            + Nuevo contacto
+          </Button>
         </div>
       </div>
 
@@ -57,6 +68,16 @@ export default function ContactsPage() {
           )}
         </div>
       </div>
+
+      <ContactFormModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onCreated={() => {
+          loadContacts();
+          loadLists();
+        }}
+        lists={lists}
+      />
     </div>
   );
 }
