@@ -120,7 +120,7 @@ create table list_contacts (
 create table whatsapp_templates (
   id uuid primary key default gen_random_uuid(),
   meta_template_name text not null,
-  meta_template_id text,
+  meta_template_id text unique,
   language text not null default 'es',
   category text, -- MARKETING | UTILITY | AUTHENTICATION
   status text, -- APPROVED | PENDING | REJECTED (sincronizado desde Meta)

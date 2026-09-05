@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
+import { SyncTemplatesButton } from '@/components/templates/SyncTemplatesButton';
 
 const STATUS_VARIANT: Record<string, string> = {
   APPROVED: 'activo',
@@ -24,7 +24,7 @@ export default async function WhatsappTemplatesPage() {
             Las plantillas se crean y aprueban en Meta Business Manager. Aquí solo se sincronizan.
           </p>
         </div>
-        <Button variant="secondary">Sincronizar con Meta</Button>
+        <SyncTemplatesButton />
       </div>
 
       <div className="overflow-hidden rounded-xl border border-booth-border">
