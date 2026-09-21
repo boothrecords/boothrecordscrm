@@ -7,8 +7,16 @@ import { createServiceClient } from '@/lib/supabase/server';
 const GRAPH_API_VERSION = 'v21.0';
 
 export async function POST() {
+  const supabase = createServiceClient();
+
+  const { data: connection } = await supabase
+    .from('whatsapp_connection')
+    .select('waba_id')
+    .eq('id', 1)
+    .maybeSingle();
+
   const token = process.env.META_WHATSAPP_TOKEN;
-  const wabaId = process.env.META_WHATSAPP_BUSINESS_ACCOUNT_ID;
+  const wabaId = connection?.waba_id || process.env.META_WHATSAPP_BUSINESS_ACCOUNT_ID;
 
   if (!token || !wabaId) {
     return NextResponse.json(
@@ -19,8 +27,6 @@ export async function POST() {
       { status: 400 }
     );
   }
-
-  const supabase = createServiceClient();
 
   let url: string | null =
     `https://graph.facebook.com/${GRAPH_API_VERSION}/${wabaId}/message_templates?fields=name,language,category,status,components&limit=100`;

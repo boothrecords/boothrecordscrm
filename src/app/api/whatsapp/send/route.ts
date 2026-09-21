@@ -33,7 +33,13 @@ export async function POST(req: NextRequest) {
 
   await supabase.from('campaigns').update({ status: 'sending' }).eq('id', campaignId);
 
-  const phoneNumberId = process.env.META_WHATSAPP_PHONE_NUMBER_ID;
+  const { data: connection } = await supabase
+    .from('whatsapp_connection')
+    .select('phone_number_id')
+    .eq('id', 1)
+    .maybeSingle();
+
+  const phoneNumberId = connection?.phone_number_id || process.env.META_WHATSAPP_PHONE_NUMBER_ID;
   const token = process.env.META_WHATSAPP_TOKEN;
   const templateName = campaign.whatsapp_templates?.meta_template_name;
   const language = campaign.whatsapp_templates?.language ?? 'es';

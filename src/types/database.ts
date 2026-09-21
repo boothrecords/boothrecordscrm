@@ -84,6 +84,15 @@ export interface WhatsappTemplate {
   synced_at: string;
 }
 
+export interface WhatsappConnection {
+  id: number;
+  phone_number_id: string | null;
+  waba_id: string | null;
+  business_name: string | null;
+  connected_at: string | null;
+  updated_at: string;
+}
+
 export interface EmailTemplate {
   id: string;
   name: string;

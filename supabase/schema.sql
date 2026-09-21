@@ -208,6 +208,18 @@ create table imports (
 );
 
 -- =========================================================
+-- Conexion de WhatsApp (Embedded Signup / Coexistencia)
+-- =========================================================
+create table whatsapp_connection (
+  id smallint primary key default 1 check (id = 1), -- fila unica (singleton)
+  phone_number_id text,
+  waba_id text,
+  business_name text,
+  connected_at timestamptz,
+  updated_at timestamptz not null default now()
+);
+
+-- =========================================================
 -- Row Level Security
 -- =========================================================
 alter table profiles enable row level security;
@@ -223,6 +235,7 @@ alter table email_templates enable row level security;
 alter table campaigns enable row level security;
 alter table campaign_recipients enable row level security;
 alter table imports enable row level security;
+alter table whatsapp_connection enable row level security;
 alter table custom_field_definitions enable row level security;
 
 -- Helper: rol del usuario autenticado
@@ -255,6 +268,8 @@ create policy "authenticated read/write: list_contacts" on list_contacts
 create policy "authenticated read/write: whatsapp_templates" on whatsapp_templates
   for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 create policy "authenticated read/write: email_templates" on email_templates
+  for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+create policy "authenticated read/write: whatsapp_connection" on whatsapp_connection
   for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 create policy "authenticated read/write: campaigns" on campaigns
   for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');

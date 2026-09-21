@@ -16,6 +16,7 @@ import {
   LogOut,
   X,
   SlidersHorizontal,
+  Link2,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import type { Profile } from '@/types/database';
@@ -50,6 +51,7 @@ const MODULE_GROUPS: {
   {
     title: 'Configuración',
     items: [
+      { href: '/configuracion/whatsapp', label: 'Conectar WhatsApp', icon: Link2 },
       { href: '/usuarios', label: 'Usuarios', icon: ShieldCheck },
       { href: '/contactos/campos-personalizados', label: 'Campos personalizados', icon: SlidersHorizontal },
     ],
