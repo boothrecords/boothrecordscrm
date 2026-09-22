@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
+import { InviteUserButton } from '@/components/users/InviteUserModal';
 
 export default async function UsersPage() {
   const supabase = createClient();
@@ -13,7 +13,7 @@ export default async function UsersPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Usuarios</h1>
-        <Button variant="primary">+ Invitar usuario</Button>
+        <InviteUserButton />
       </div>
 
       <div className="overflow-hidden rounded-xl border border-booth-border">

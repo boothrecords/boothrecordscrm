@@ -32,7 +32,10 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const isAuthRoute = request.nextUrl.pathname.startsWith('/login');
-  const isPublicRoute = request.nextUrl.pathname.startsWith('/politica-privacidad');
+  const isPublicRoute =
+    request.nextUrl.pathname.startsWith('/politica-privacidad') ||
+    request.nextUrl.pathname.startsWith('/auth/confirm') ||
+    request.nextUrl.pathname.startsWith('/aceptar-invitacion');
 
   if (!user && !isAuthRoute && !isPublicRoute) {
     const url = request.nextUrl.clone();
