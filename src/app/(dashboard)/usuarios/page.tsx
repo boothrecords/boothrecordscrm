@@ -1,12 +1,16 @@
 import { createClient } from '@/lib/supabase/server';
-import { Badge } from '@/components/ui/Badge';
+import { requireAdmin } from '@/lib/auth';
 import { InviteUserButton } from '@/components/users/InviteUserModal';
+import { UsersTable } from '@/components/users/UsersTable';
+import type { Profile } from '@/types/database';
 
 export default async function UsersPage() {
+  const currentProfile = await requireAdmin();
+
   const supabase = createClient();
   const { data: profiles } = await supabase
     .from('profiles')
-    .select('id, full_name, email, role, created_at')
+    .select('id, full_name, email, role, avatar_url, created_at')
     .order('created_at', { ascending: true });
 
   return (
@@ -16,32 +20,7 @@ export default async function UsersPage() {
         <InviteUserButton />
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-booth-border">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-booth-surface text-booth-textMuted">
-            <tr>
-              <th className="px-4 py-3 font-medium">Nombre</th>
-              <th className="px-4 py-3 font-medium">Correo</th>
-              <th className="px-4 py-3 font-medium">Rol</th>
-              <th className="px-4 py-3 font-medium">Desde</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-booth-border">
-            {(profiles ?? []).map((p) => (
-              <tr key={p.id} className="hover:bg-booth-surface/60">
-                <td className="px-4 py-3 font-medium">{p.full_name ?? '—'}</td>
-                <td className="px-4 py-3 text-booth-textMuted">{p.email}</td>
-                <td className="px-4 py-3">
-                  <Badge variant={p.role === 'admin' ? 'activo' : 'default'}>{p.role}</Badge>
-                </td>
-                <td className="px-4 py-3 text-booth-textMuted">
-                  {new Date(p.created_at).toLocaleDateString('es-CO')}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <UsersTable profiles={(profiles as Profile[]) ?? []} currentUserId={currentProfile.id} />
     </div>
   );
 }

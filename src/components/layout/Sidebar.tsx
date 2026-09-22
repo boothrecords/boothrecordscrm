@@ -17,52 +17,74 @@ import {
   X,
   SlidersHorizontal,
   Link2,
+  KeyRound,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import type { Profile } from '@/types/database';
 
-const RAIL_ITEMS = [
-  { href: '/', label: 'Inicio', icon: Home },
-  { href: '/contactos', label: 'Contactos', icon: Users },
-  { href: '/listas', label: 'Listas', icon: ListChecks },
-  { href: '/campanas', label: 'Campañas', icon: Send },
-];
+type NavItem = { href: string; label: string; icon: typeof Home };
 
-const MODULE_GROUPS: {
-  title: string;
-  items: { href: string; label: string; icon: typeof Home }[];
-}[] = [
-  {
-    title: 'General',
-    items: [
-      { href: '/', label: 'Inicio', icon: Home },
-      { href: '/contactos', label: 'Contactos', icon: Users },
-      { href: '/listas', label: 'Listas', icon: ListChecks },
-    ],
-  },
-  {
-    title: 'Campañas',
-    items: [
-      { href: '/campanas', label: 'Campañas', icon: Send },
-      { href: '/plantillas/email', label: 'Plantillas de email', icon: Mail },
-      { href: '/plantillas/whatsapp', label: 'Plantillas de WhatsApp', icon: MessageCircle },
-    ],
-  },
-  {
-    title: 'Configuración',
-    items: [
-      { href: '/configuracion/whatsapp', label: 'Conectar WhatsApp', icon: Link2 },
-      { href: '/usuarios', label: 'Usuarios', icon: ShieldCheck },
-      { href: '/contactos/campos-personalizados', label: 'Campos personalizados', icon: SlidersHorizontal },
-    ],
-  },
-];
+// El rol "user" (nivel 1) solo ve Contactos y Campañas: puede subir contactos
+// y crear campañas, pero no administra listas, plantillas, usuarios ni
+// configuración. El admin ve todo.
+function getRailItems(isAdmin: boolean): NavItem[] {
+  return [
+    { href: '/', label: 'Inicio', icon: Home },
+    { href: '/contactos', label: 'Contactos', icon: Users },
+    ...(isAdmin ? [{ href: '/listas', label: 'Listas', icon: ListChecks }] : []),
+    { href: '/campanas', label: 'Campañas', icon: Send },
+  ];
+}
+
+function getModuleGroups(isAdmin: boolean): { title: string; items: NavItem[] }[] {
+  const groups: { title: string; items: NavItem[] }[] = [
+    {
+      title: 'General',
+      items: [
+        { href: '/', label: 'Inicio', icon: Home },
+        { href: '/contactos', label: 'Contactos', icon: Users },
+        ...(isAdmin ? [{ href: '/listas', label: 'Listas', icon: ListChecks }] : []),
+      ],
+    },
+    {
+      title: 'Campañas',
+      items: isAdmin
+        ? [
+            { href: '/campanas', label: 'Campañas', icon: Send },
+            { href: '/plantillas/email', label: 'Plantillas de email', icon: Mail },
+            { href: '/plantillas/whatsapp', label: 'Plantillas de WhatsApp', icon: MessageCircle },
+          ]
+        : [{ href: '/campanas', label: 'Campañas', icon: Send }],
+    },
+  ];
+
+  if (isAdmin) {
+    groups.push({
+      title: 'Configuración',
+      items: [
+        { href: '/configuracion/whatsapp', label: 'Conectar WhatsApp', icon: Link2 },
+        { href: '/usuarios', label: 'Usuarios', icon: ShieldCheck },
+        { href: '/contactos/campos-personalizados', label: 'Campos personalizados', icon: SlidersHorizontal },
+      ],
+    });
+  }
+
+  groups.push({
+    title: 'Cuenta',
+    items: [{ href: '/cuenta', label: 'Mi cuenta', icon: KeyRound }],
+  });
+
+  return groups;
+}
 
 export function Sidebar({ profile }: { profile: Profile | null }) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
   const [panelOpen, setPanelOpen] = useState(false);
+  const isAdmin = profile?.role === 'admin';
+  const railItems = getRailItems(isAdmin);
+  const moduleGroups = getModuleGroups(isAdmin);
 
   function isActive(href: string) {
     return href === '/' ? pathname === '/' : pathname.startsWith(href);
@@ -101,7 +123,7 @@ export function Sidebar({ profile }: { profile: Profile | null }) {
         </button>
 
         <nav className="flex flex-1 flex-col items-center gap-2">
-          {RAIL_ITEMS.map((item) => {
+          {railItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
             return (
@@ -155,7 +177,7 @@ export function Sidebar({ profile }: { profile: Profile | null }) {
               </button>
             </div>
 
-            {MODULE_GROUPS.map((group) => (
+            {moduleGroups.map((group) => (
               <div key={group.title} className="mb-6">
                 <p className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-booth-textMuted/70">
                   {group.title}
