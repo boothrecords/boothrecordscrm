@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { ContactFilters } from '@/components/contacts/ContactFilters';
 import { ContactsTable } from '@/components/contacts/ContactsTable';
 import { ContactFormModal } from '@/components/contacts/ContactFormModal';
+import { ImportContactsModal } from '@/components/contacts/ImportContactsModal';
 import { Button } from '@/components/ui/Button';
 import type {
   Contact,
@@ -24,6 +25,7 @@ export default function ContactsPage() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [templatesOpen, setTemplatesOpen] = useState(false);
+  const [importModalOpen, setImportModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const activeFiltersRef = useRef<ContactFiltersType>({});
 
@@ -151,8 +153,18 @@ export default function ContactsPage() {
                     Plantilla Excel (.xlsx)
                   </a>
                   <p className="mt-2 px-1 text-xs text-booth-textMuted">
-                    Llena la plantilla con tus contactos y súbela desde el módulo de importación.
+                    Llena la plantilla con tus contactos y súbela aquí abajo.
                   </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTemplatesOpen(false);
+                      setImportModalOpen(true);
+                    }}
+                    className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-booth-accent px-3 py-2 text-sm font-medium text-white hover:opacity-90"
+                  >
+                    Subir archivo ya lleno
+                  </button>
                 </div>
               </>
             )}
@@ -202,6 +214,12 @@ export default function ContactsPage() {
         tags={tags}
         onTagCreated={handleTagCreated}
         customFieldDefs={customFieldDefs}
+      />
+
+      <ImportContactsModal
+        open={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
+        onImported={() => loadContacts(activeFiltersRef.current)}
       />
     </div>
   );

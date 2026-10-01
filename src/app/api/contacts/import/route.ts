@@ -1,13 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
-import { createServiceClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 
 // POST /api/contacts/import
 // Recibe un archivo CSV o XLSX (multipart/form-data, campo "file") y un
 // mapeo de columnas (JSON, campo "mapping": { first_name: "Nombre", email: "Correo", ... }).
 // Crea un registro en `imports` y hace upsert de los contactos por email/teléfono.
+// Cualquier cuenta logueada (admin o usuario) puede importar contactos.
 export async function POST(req: NextRequest) {
+  const authClient = createClient();
+  const {
+    data: { user },
+  } = await authClient.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: 'No autenticado.' }, { status: 401 });
+  }
+
   const formData = await req.formData();
   const file = formData.get('file') as File | null;
   const mappingRaw = formData.get('mapping') as string | null;
