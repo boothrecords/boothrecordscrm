@@ -34,12 +34,10 @@ export async function POST(req: NextRequest) {
   let userToken: string | null = null;
   let subscribeWarning: string | null = null;
 
-  // El intercambio del "code" exige el mismo redirect_uri que se uso al
-  // generarlo. Con el flujo del SDK de JavaScript (FB.login en un popup) ese
-  // redirect_uri implicito es la URL del sitio donde corre la pagina, que es
-  // la misma que configuramos como "URI de redireccionamiento de OAuth
-  // validos" en Meta.
-  const redirectUri = `${req.nextUrl.origin}/`;
+  // El intercambio del "code" que devuelve FB.login (popup del SDK de
+  // JavaScript, no una redireccion real) necesita un redirect_uri "vacio"
+  // para validar: no es el mismo caso que un flujo de redireccion normal.
+  const redirectUri = '';
 
   // Paso 1: intercambiar el "code" por un token de usuario.
   if (code) {
@@ -50,7 +48,10 @@ export async function POST(req: NextRequest) {
       const tokenJson = await tokenRes.json();
       userToken = tokenJson?.access_token ?? null;
       if (!userToken) {
-        subscribeWarning = tokenJson?.error?.message ?? 'No se pudo intercambiar el codigo por un token.';
+        const e = tokenJson?.error;
+        subscribeWarning = e
+          ? `${e.message ?? 'Error desconocido'} (type=${e.type ?? '?'}, code=${e.code ?? '?'}, subcode=${e.error_subcode ?? '?'})`
+          : 'No se pudo intercambiar el codigo por un token.';
       }
     } catch (err: any) {
       subscribeWarning = err.message;
