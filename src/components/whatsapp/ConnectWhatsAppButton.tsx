@@ -88,9 +88,13 @@ export function ConnectWhatsAppButton() {
     }
 
     function handleMessage(event: MessageEvent) {
+      // eslint-disable-next-line no-console
+      console.log('[WA_SIGNUP] mensaje recibido de', event.origin, event.data);
       if (!event.origin.endsWith('facebook.com')) return;
       try {
         const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+        // eslint-disable-next-line no-console
+        console.log('[WA_SIGNUP] data parseada:', data);
         if (data?.type !== 'WA_EMBEDDED_SIGNUP') return;
 
         if (data.event === 'FINISH' || data.event === 'FINISH_ONLY_WABA') {
@@ -125,6 +129,8 @@ export function ConnectWhatsAppButton() {
 
     window.FB.login(
       (response: any) => {
+        // eslint-disable-next-line no-console
+        console.log('[WA_SIGNUP] FB.login callback response:', response);
         if (response.authResponse?.code) {
           lastAuthCodeRef.current = response.authResponse.code;
         }
