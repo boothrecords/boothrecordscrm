@@ -44,66 +44,71 @@ export function ConnectWhatsAppButton() {
   );
   const [message, setMessage] = useState<string | null>(null);
   const lastAuthCodeRef = useRef<string | undefined>(undefined);
+  // Evita completar la conexion dos veces: una por el postMessage "FINISH"
+  // (numero nuevo creado con el wizard completo) y otra por el respaldo que
+  // se dispara desde el callback de FB.login (numero/WABA que ya existia en
+  // otro negocio y solo se compartio, caso en el que Meta no manda FINISH).
+  const handledRef = useRef(false);
 
-  useEffect(() => {
-    async function completeConnection(
-      phoneNumberId: string | undefined,
-      wabaId: string | undefined,
-      businessName: string | undefined
-    ) {
-      if (!phoneNumberId || !wabaId) {
-        setStatus('error');
-        setMessage('No se recibió el número o la cuenta de WhatsApp Business.');
-        return;
-      }
+  async function completeConnection(
+    phoneNumberId: string | undefined,
+    wabaId: string | undefined,
+    businessName: string | undefined
+  ) {
+    if (handledRef.current) return;
+    handledRef.current = true;
 
-      setStatus('connecting');
+    setStatus('connecting');
 
-      const res = await fetch('/api/whatsapp/embedded-signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phoneNumberId,
-          wabaId,
-          businessName,
-          code: lastAuthCodeRef.current,
-        }),
-      });
+    const res = await fetch('/api/whatsapp/embedded-signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phoneNumberId,
+        wabaId,
+        businessName,
+        code: lastAuthCodeRef.current,
+      }),
+    });
 
-      const json = await res.json();
-
-      if (!res.ok) {
-        setStatus('error');
-        setMessage(json.error ?? 'No se pudo guardar la conexión.');
-        return;
-      }
-
-      setStatus('success');
-      setMessage(
-        json.warning
-          ? `Conectado, pero: ${json.warning}`
-          : '¡WhatsApp Business conectado correctamente!'
-      );
-      router.refresh();
+    let json: any = null;
+    try {
+      json = await res.json();
+    } catch {
+      json = { error: 'Respuesta inesperada del servidor.' };
     }
 
+    if (!res.ok) {
+      setStatus('error');
+      setMessage(json?.error ?? 'No se pudo guardar la conexión.');
+      return;
+    }
+
+    setStatus('success');
+    setMessage(
+      json.warning
+        ? `Conectado, pero: ${json.warning}`
+        : '¡WhatsApp Business conectado correctamente!'
+    );
+    router.refresh();
+  }
+
+  useEffect(() => {
     function handleMessage(event: MessageEvent) {
-      // eslint-disable-next-line no-console
-      console.log('[WA_SIGNUP] mensaje recibido de', event.origin, event.data);
       if (!event.origin.endsWith('facebook.com')) return;
       try {
         const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-        // eslint-disable-next-line no-console
-        console.log('[WA_SIGNUP] data parseada:', data);
         if (data?.type !== 'WA_EMBEDDED_SIGNUP') return;
 
         if (data.event === 'FINISH' || data.event === 'FINISH_ONLY_WABA') {
           const { phone_number_id, waba_id, business_name } = data.data ?? {};
           void completeConnection(phone_number_id, waba_id, business_name);
         } else if (data.event === 'CANCEL') {
+          handledRef.current = true;
           setStatus('error');
           setMessage('Conexión cancelada antes de terminar.');
         } else if (data.event === 'ERROR') {
+          handledRef.current = true;
           setStatus('error');
           setMessage(data.data?.error_message ?? 'Ocurrió un error durante la conexión.');
         }
@@ -114,6 +119,7 @@ export function ConnectWhatsAppButton() {
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
   async function handleClick() {
@@ -123,18 +129,33 @@ export function ConnectWhatsAppButton() {
       return;
     }
 
+    handledRef.current = false;
     setStatus('loading');
     setMessage(null);
     await loadFacebookSdk();
 
     window.FB.login(
       (response: any) => {
-        // eslint-disable-next-line no-console
-        console.log('[WA_SIGNUP] FB.login callback response:', response);
-        if (response.authResponse?.code) {
-          lastAuthCodeRef.current = response.authResponse.code;
+        if (!response.authResponse?.code) {
+          if (!handledRef.current) {
+            handledRef.current = true;
+            setStatus('error');
+            setMessage('Conexión cancelada antes de terminar.');
+          }
+          return;
         }
+
+        lastAuthCodeRef.current = response.authResponse.code;
         setStatus('connecting');
+
+        // Si en unos segundos no llego el postMessage "FINISH" (pasa cuando
+        // se comparte un numero/WABA que ya existia en otro negocio, en vez
+        // de crear uno nuevo con el wizard completo), seguimos de todas
+        // formas con el codigo que tenemos: el backend busca el numero y la
+        // cuenta autorizados via la Graph API.
+        setTimeout(() => {
+          void completeConnection(undefined, undefined, undefined);
+        }, 2500);
       },
       {
         config_id: CONFIG_ID,
