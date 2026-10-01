@@ -148,14 +148,13 @@ export function ConnectWhatsAppButton() {
         lastAuthCodeRef.current = response.authResponse.code;
         setStatus('connecting');
 
-        // Si en unos segundos no llego el postMessage "FINISH" (pasa cuando
-        // se comparte un numero/WABA que ya existia en otro negocio, en vez
-        // de crear uno nuevo con el wizard completo), seguimos de todas
-        // formas con el codigo que tenemos: el backend busca el numero y la
-        // cuenta autorizados via la Graph API.
-        setTimeout(() => {
-          void completeConnection(undefined, undefined, undefined);
-        }, 2500);
+        // Si ya se completo por el postMessage "FINISH" (numero nuevo
+        // creado con el wizard completo), no hacemos nada mas. Si no, usamos
+        // el codigo de inmediato (los codigos de autorizacion de Meta
+        // expiran muy rapido): pasa cuando se comparte un numero/WABA que ya
+        // existia en otro negocio, en vez de crear uno nuevo. El backend
+        // busca el numero y la cuenta autorizados via la Graph API.
+        void completeConnection(undefined, undefined, undefined);
       },
       {
         config_id: CONFIG_ID,

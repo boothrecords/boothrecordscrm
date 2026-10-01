@@ -34,16 +34,14 @@ export async function POST(req: NextRequest) {
   let userToken: string | null = null;
   let subscribeWarning: string | null = null;
 
-  // El intercambio del "code" que devuelve FB.login (popup del SDK de
-  // JavaScript, no una redireccion real) necesita un redirect_uri "vacio"
-  // para validar: no es el mismo caso que un flujo de redireccion normal.
-  const redirectUri = '';
-
+  // Segun la documentacion de Meta para Embedded Signup, el intercambio del
+  // "code" NO lleva redirect_uri (ese parametro solo aplica a flujos de
+  // redireccion real, no al popup del SDK de JavaScript).
   // Paso 1: intercambiar el "code" por un token de usuario.
   if (code) {
     try {
       const tokenRes = await fetch(
-        `https://graph.facebook.com/${GRAPH_API_VERSION}/oauth/access_token?client_id=${appId}&client_secret=${appSecret}&redirect_uri=${encodeURIComponent(redirectUri)}&code=${code}`
+        `https://graph.facebook.com/${GRAPH_API_VERSION}/oauth/access_token?client_id=${appId}&client_secret=${appSecret}&code=${code}`
       );
       const tokenJson = await tokenRes.json();
       userToken = tokenJson?.access_token ?? null;
