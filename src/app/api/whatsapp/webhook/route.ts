@@ -35,8 +35,15 @@ export async function POST(req: NextRequest) {
             ? 'read_at'
             : null;
 
-        const update: Record<string, unknown> = { status: status.status };
+        // Normalizamos a nuestro enum recipient_status: Meta usa "failed" para
+        // rebotes/errores de entrega; guardamos como "bounced" junto con el
+        // motivo que Meta reporta en errors[], para poder mostrarlo en Booth.
+        const mappedStatus = status.status === 'failed' ? 'bounced' : status.status;
+        const errorDetail = status.errors?.[0]?.title || status.errors?.[0]?.message;
+
+        const update: Record<string, unknown> = { status: mappedStatus };
         if (column) update[column] = new Date(Number(status.timestamp) * 1000).toISOString();
+        if (errorDetail) update.error_message = errorDetail;
 
         await supabase
           .from('campaign_recipients')

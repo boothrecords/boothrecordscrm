@@ -47,14 +47,26 @@ export default async function CampaignsPage() {
           </thead>
           <tbody className="divide-y divide-booth-border">
             {(campaigns ?? []).map((c: any) => (
-              <tr key={c.id} className="hover:bg-booth-surface/60">
-                <td className="px-4 py-3 font-medium">{c.name}</td>
-                <td className="px-4 py-3 capitalize text-booth-textMuted">{c.channel}</td>
+              <tr key={c.id} className="cursor-pointer hover:bg-booth-surface/60">
+                <td className="px-4 py-3 font-medium">
+                  <Link href={`/campanas/${c.id}`} className="block">
+                    {c.name}
+                  </Link>
+                </td>
+                <td className="px-4 py-3 capitalize text-booth-textMuted">
+                  <Link href={`/campanas/${c.id}`} className="block">
+                    {c.channel}
+                  </Link>
+                </td>
                 <td className="px-4 py-3">
-                  <Badge variant={STATUS_VARIANT[c.status]}>{c.status}</Badge>
+                  <Link href={`/campanas/${c.id}`} className="block">
+                    <Badge variant={STATUS_VARIANT[c.status]}>{c.status}</Badge>
+                  </Link>
                 </td>
                 <td className="px-4 py-3 text-booth-textMuted">
-                  {c.sent_at ? new Date(c.sent_at).toLocaleString('es-CO') : '—'}
+                  <Link href={`/campanas/${c.id}`} className="block">
+                    {c.sent_at ? new Date(c.sent_at).toLocaleString('es-CO') : '—'}
+                  </Link>
                 </td>
               </tr>
             ))}
